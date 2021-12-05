@@ -20,7 +20,7 @@ public struct FirestoreResource {
         return client.send(method: .GET, path: path, query: "", body: ByteBuffer(), headers: [:])
     }
     
-    public func deleteDocument(path: String) -> EventLoopFuture<[String: String]> {
+    public func deleteDocument<T: Decodable>(path: String) -> EventLoopFuture<T> {
         return client.send(method: .DELETE, path: path, query: "", body: ByteBuffer(), headers: [:])
     }
 
