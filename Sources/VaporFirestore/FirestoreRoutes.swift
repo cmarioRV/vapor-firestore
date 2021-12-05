@@ -19,6 +19,10 @@ public struct FirestoreResource {
     public func getDocument<T: Decodable>(path: String) -> EventLoopFuture<Firestore.Document<T>> {
         return client.send(method: .GET, path: path, query: "", body: ByteBuffer(), headers: [:])
     }
+    
+    public func deleteDocument(path: String) -> EventLoopFuture<String> {
+        return client.send(method: .DELETE, path: path, query: "", body: ByteBuffer(), headers: [:])
+    }
 
     public func listDocuments<T: Decodable>(path: String) -> EventLoopFuture<[Firestore.Document<T>]> {
         let sendReq: EventLoopFuture<Firestore.List.Response<T>> = client.send(
