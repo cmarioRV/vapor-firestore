@@ -16,8 +16,8 @@ public struct FirestoreResource {
         self.client = FirestoreAPIClient(app: app)
     }
 
-    public func getDocument<T: Decodable>(path: String) -> EventLoopFuture<Firestore.Document<T>> {
-        return client.send(method: .GET, path: path, query: "", body: ByteBuffer(), headers: [:])
+    public func getDocument<T: Decodable>(path: String, query: String? = nil) -> EventLoopFuture<Firestore.Document<T>> {
+        return client.send(method: .GET, path: path, query: query ?? "", body: ByteBuffer(), headers: [:])
     }
     
     public func deleteDocument<T: Decodable>(path: String) -> EventLoopFuture<T> {
