@@ -33,6 +33,16 @@ public struct FirestoreResource {
             headers: [:])
         return sendReq.map { $0.documents }
     }
+    
+    public func listDocumentsPaginated<T: Decodable>(path: String, query: String? = nil) -> EventLoopFuture<Firestore.List.Response<T>> {
+        client.send(
+            method: .GET,
+            path: path,
+            query: query ?? "",
+            body: ByteBuffer(),
+            headers: [:]
+        )
+    }
 
     public func createDocument<T: Codable>(path: String, name: String? = nil, fields: T) -> EventLoopFuture<Firestore.Document<T>> {
         var query = ""

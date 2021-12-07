@@ -101,17 +101,19 @@ public enum Firestore
 
     }
     
-    enum List
+    public enum List
     {
         public struct Request<T: Codable>: Content {
         }
 
         public struct Response<T: Codable>: Content {
             public let documents: [Document<T>]
+            public let nextPageToken: String?
             
             public init(from decoder: Decoder) throws {
                 let values = try decoder.container(keyedBy: CodingKeys.self)
                 documents = try values.decodeIfPresent( [Document<T>].self, forKey: .documents) ?? [Document<T>]()
+                nextPageToken = try values.decodeIfPresent(String.self, forKey: .nextPageToken)
             }
         }
         
