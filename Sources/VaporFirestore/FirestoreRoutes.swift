@@ -16,8 +16,20 @@ public struct FirestoreResource {
         self.client = FirestoreAPIClient(app: app)
     }
 
-    public func getDocument<T: Decodable>(path: String, query: String? = nil) -> EventLoopFuture<Firestore.Document<T>> {
-        return client.send(method: .GET, path: path, query: query ?? "", body: ByteBuffer(), headers: [:])
+    public func getDocument<T: Decodable>(path: String, query: String? = nil, mask: [String]? = nil) -> EventLoopFuture<Firestore.Document<T>> {
+        
+        var finalQuery = ""
+        
+        if let query = query {
+            finalQuery.append(query)
+        }
+        
+        if let mask = mask {
+            let maskQuery = mask.map({ "updateMask.fieldPaths=\($0)" }).joined(separator: "&")
+            finalQuery.append(maskQuery)
+        }
+        
+        return client.send(method: .GET, path: path, query: finalQuery, body: ByteBuffer(), headers: [:])
     }
     
     public func deleteDocument<T: Decodable>(path: String) -> EventLoopFuture<T> {
