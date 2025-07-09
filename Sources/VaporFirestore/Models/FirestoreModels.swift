@@ -5,7 +5,6 @@
 //  Created by Ash Thwaites on 02/04/2019.
 //
 
-
 import Foundation
 import Vapor
 import JWT
@@ -33,7 +32,6 @@ public enum Firestore
     public enum Auth
     {
         public struct Payload: JWTPayload {
-            
             public var exp: ExpirationClaim
             public var iss: IssuerClaim
             public var aud: AudienceClaim
@@ -87,11 +85,10 @@ public enum Firestore
             }
         }
     }
-    
-    
+
     enum Create
     {
-        public struct Request<T: Codable>: Content {
+        public struct Request<T: Codable & Sendable>: Content {
             public let name: String
             public let fields: T?
         }
@@ -106,7 +103,7 @@ public enum Firestore
         public struct Request<T: Codable>: Content {
         }
 
-        public struct Response<T: Codable>: Content {
+        public struct Response<T: Codable & Sendable>: Content {
             public let documents: [Document<T>]
             public let nextPageToken: String?
             
@@ -120,7 +117,7 @@ public enum Firestore
     }
 
     
-    public struct Document<T: Codable>: Codable {
+    public struct Document<T: Codable & Sendable>: Codable & Sendable {
         public let name: String
         public let createTime: Date
         public let updateTime: Date
@@ -460,5 +457,4 @@ public enum Firestore
         }
     }
 }
-
 

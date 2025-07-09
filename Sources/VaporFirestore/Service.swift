@@ -7,7 +7,7 @@
 
 import Vapor
 
-public struct FirestoreConfig {
+public struct FirestoreConfig : Sendable {
     public struct FirestoreConfigKey: StorageKey {
         public typealias Value = FirestoreConfig
     }
