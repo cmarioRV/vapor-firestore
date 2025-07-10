@@ -127,7 +127,7 @@ public enum Firestore
     
     // MARK - VALUES wrappers
     
-    public enum CodingKeys: String, CodingKey {
+    public enum ValueCodingKeys: String, CodingKey {
         case stringValue
         case booleanValue
         case integerValue
@@ -162,7 +162,7 @@ public enum Firestore
     
     // MARK: - simple types
     @propertyWrapper
-    public class StringValue: GenericValue<String, CodingKeys>, ExpressibleByStringLiteral {
+    public class StringValue: GenericValue<String, ValueCodingKeys>, ExpressibleByStringLiteral {
         public override var wrappedValue: String {
             get { super.wrappedValue }
             set { super.wrappedValue = newValue }
@@ -180,11 +180,11 @@ public enum Firestore
             super.init(wrappedValue: wrappedValue)
         }
         
-        override public class var key: CodingKeys { .stringValue }
+        override public class var key: ValueCodingKeys { .stringValue }
     }
     
     @propertyWrapper
-    public class BoolValue: GenericValue<Bool, CodingKeys>, ExpressibleByBooleanLiteral {
+    public class BoolValue: GenericValue<Bool, ValueCodingKeys>, ExpressibleByBooleanLiteral {
         public override var wrappedValue: Bool {
             get { super.wrappedValue }
             set { super.wrappedValue = newValue }
@@ -202,16 +202,16 @@ public enum Firestore
             super.init(wrappedValue: wrappedValue)
         }
         
-        override public class var key: CodingKeys { .booleanValue }
+        override public class var key: ValueCodingKeys { .booleanValue }
     }
     
     @propertyWrapper
-    public class TimestampValue: GenericValue<Date, CodingKeys> {
+    public class TimestampValue: GenericValue<Date, ValueCodingKeys> {
         public override var wrappedValue: Date {
             get { super.wrappedValue }
             set { super.wrappedValue = newValue }
         }
-        override public class var key: CodingKeys { .timestampValue }
+        override public class var key: ValueCodingKeys { .timestampValue }
     }
     
     public class ReferenceValue: Codable, PropertyWrapperValue {
@@ -251,7 +251,7 @@ public enum Firestore
         }
         
         required public init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
+            let container = try decoder.container(keyedBy: ValueCodingKeys.self)
             self.fullDocumentPath = try container.decode(String.self, forKey: .referenceValue)
             let parts = try ReferenceValue.parts(fromFullPath: fullDocumentPath)
             self.projectId = parts.0
@@ -260,7 +260,7 @@ public enum Firestore
         }
         
         public func encode(to encoder: Encoder) throws {
-            var container = encoder.container(keyedBy: CodingKeys.self)
+            var container = encoder.container(keyedBy: ValueCodingKeys.self)
             try container.encode(fullDocumentPath, forKey: .referenceValue)
         }
         
@@ -295,12 +295,12 @@ public enum Firestore
         }
         
         public init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
+            let container = try decoder.container(keyedBy: ValueCodingKeys.self)
             self.wrappedValue = try container.decode(Double.self, forKey: .doubleValue)
         }
         
         public func encode(to encoder: Encoder) throws {
-            var container = encoder.container(keyedBy: CodingKeys.self)
+            var container = encoder.container(keyedBy: ValueCodingKeys.self)
             try container.encode(wrappedValue, forKey: .doubleValue)
         }
     }
@@ -322,12 +322,12 @@ public enum Firestore
         }
         
         public init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
+            let container = try decoder.container(keyedBy: ValueCodingKeys.self)
             self.stringVersion = try container.decode(String.self, forKey: .integerValue)
         }
         
         public func encode(to encoder: Encoder) throws {
-            var container = encoder.container(keyedBy: CodingKeys.self)
+            var container = encoder.container(keyedBy: ValueCodingKeys.self)
             try container.encode(wrappedValue, forKey: .integerValue)
         }
     }
@@ -354,14 +354,14 @@ public enum Firestore
         }
         
         public init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
+            let container = try decoder.container(keyedBy: ValueCodingKeys.self)
             let nestedContainer = try container.nestedContainer(keyedBy: GeoCodingKeys.self, forKey: .geoPointValue)
             latitude = try nestedContainer.decode(Double.self, forKey: .latitude)
             longitude = try nestedContainer.decode(Double.self, forKey: .longitude)
         }
         
         public func encode(to encoder: Encoder) throws {
-            var container = encoder.container(keyedBy: CodingKeys.self)
+            var container = encoder.container(keyedBy: ValueCodingKeys.self)
             var nestedContainer = container.nestedContainer(keyedBy: GeoCodingKeys.self, forKey: .geoPointValue)
             try nestedContainer.encode(latitude, forKey: .latitude)
             try nestedContainer.encode(longitude, forKey: .longitude)
@@ -382,13 +382,13 @@ public enum Firestore
         }
         
         public init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: Firestore.CodingKeys.self)
+            let container = try decoder.container(keyedBy: Firestore.ValueCodingKeys.self)
             let nestedContainer = try container.nestedContainer(keyedBy: NestedCodingKeys.self, forKey: .mapValue)
             wrappedValue = try nestedContainer.decode(T.self, forKey: .fields)
         }
         
         public func encode(to encoder: Encoder) throws {
-            var container = encoder.container(keyedBy: Firestore.CodingKeys.self)
+            var container = encoder.container(keyedBy: Firestore.ValueCodingKeys.self)
             var nestedContainer = container.nestedContainer(keyedBy: NestedCodingKeys.self, forKey: .mapValue)
             try nestedContainer.encode(wrappedValue, forKey: .fields)
         }
@@ -413,13 +413,13 @@ public enum Firestore
         }
         
         public init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: Firestore.CodingKeys.self)
+            let container = try decoder.container(keyedBy: Firestore.ValueCodingKeys.self)
             let nestedContainer = try container.nestedContainer(keyedBy: NestedCodingKeys.self, forKey: .arrayValue)
             wrappedValue = try nestedContainer.decode([T].self, forKey: .values)
         }
         
         public func encode(to encoder: Encoder) throws {
-            var container = encoder.container(keyedBy: Firestore.CodingKeys.self)
+            var container = encoder.container(keyedBy: Firestore.ValueCodingKeys.self)
             var nestedContainer = container.nestedContainer(keyedBy: NestedCodingKeys.self, forKey: .arrayValue)
             try nestedContainer.encode(wrappedValue, forKey: .values)
         }
@@ -439,7 +439,7 @@ public enum Firestore
         }
         
         required public init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: Firestore.CodingKeys.self)
+            let container = try decoder.container(keyedBy: Firestore.ValueCodingKeys.self)
             do {
                 _ = try container.decode(T?.self, forKey: .nullValue)
             } catch {
@@ -451,7 +451,7 @@ public enum Firestore
             if let someValue = wrappedValue {
                 try T(wrappedValue: someValue).encode(to: encoder)
             } else {
-                var container = encoder.container(keyedBy: Firestore.CodingKeys.self)
+                var container = encoder.container(keyedBy: Firestore.ValueCodingKeys.self)
                 try container.encode(wrappedValue, forKey: .nullValue)
             }
         }
