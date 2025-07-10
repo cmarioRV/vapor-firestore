@@ -16,7 +16,7 @@ public struct FirestoreResource {
         self.client = FirestoreAPIClient(app: app)
     }
 
-    public func getDocument<T: Decodable>(path: String, query: String? = nil, mask: [String]? = nil) -> EventLoopFuture<Firestore.Document<T>> {
+    public func getDocument<T: Decodable>(path: String, query: String? = nil, mask: [String]? = nil) async throws -> Firestore.Document<T> {
         
         var finalQuery = ""
         
@@ -29,25 +29,34 @@ public struct FirestoreResource {
             finalQuery.append(maskQuery)
         }
         
-        return client.send(method: .GET, path: path, query: finalQuery, body: ByteBuffer(), headers: [:])
+        return try await client.send(
+            method: .GET,
+            path: path,
+            query: finalQuery,
+            body: ByteBuffer(),
+            headers: [:])
     }
     
-    public func deleteDocument<T: Decodable>(path: String) -> EventLoopFuture<T> {
-        return client.send(method: .DELETE, path: path, query: "", body: ByteBuffer(), headers: [:])
+    public func deleteDocument<T: Decodable>(path: String) async throws -> T {
+        return try await client.send(
+            method: .DELETE,
+            path: path,
+            query: "",
+            body: ByteBuffer(),
+            headers: [:])
     }
 
-    public func listDocuments<T: Decodable>(path: String, query: String? = nil) -> EventLoopFuture<[Firestore.Document<T>]> {
-        let sendReq: EventLoopFuture<Firestore.List.Response<T>> = client.send(
+    public func listDocuments<T: Decodable>(path: String, query: String? = nil) async throws -> [Firestore.Document<T>] {
+        return try await client.send(
             method: .GET,
             path: path,
             query: query ?? "",
             body: ByteBuffer(),
             headers: [:])
-        return sendReq.map { $0.documents }
     }
     
-    public func listDocumentsPaginated<T: Decodable>(path: String, query: String? = nil) -> EventLoopFuture<Firestore.List.Response<T>> {
-        client.send(
+    public func listDocumentsPaginated<T: Decodable>(path: String, query: String? = nil) async throws -> Firestore.List.Response<T> {
+        return try await client.send(
             method: .GET,
             path: path,
             query: query ?? "",
@@ -56,39 +65,34 @@ public struct FirestoreResource {
         )
     }
 
-    public func createDocument<T: Codable>(path: String, name: String? = nil, fields: T) -> EventLoopFuture<Firestore.Document<T>> {
+    public func createDocument<T: Codable>(path: String, name: String? = nil, fields: T) async throws -> Firestore.Document<T> {
         var query = ""
         if let safeName = name {
             query += "documentId=\(safeName)"
         }
-        return app.client.eventLoop.tryFuture { () -> ByteBuffer in
-            return try JSONEncoder.firestore.encode(["fields": fields]).convertToHTTPBody()
-        }.flatMap { requestBody -> EventLoopFuture<Firestore.Document<T>> in
-            return client.send(
-                method: .POST,
-                path: path,
-                query: query,
-                body: requestBody,
-                headers: [:])
-        }
+        
+        let requestBody = try JSONEncoder.firestore.encode(["fields": fields]).convertToHTTPBody()
+        return try await client.send(
+            method: .POST,
+            path: path,
+            query: query,
+            body: requestBody,
+            headers: [:])
     }
 
-    public func updateDocument<T: Codable>(path: String, fields: T, updateMask: [String]?) -> EventLoopFuture<Firestore.Document<T>> {
+    public func updateDocument<T: Codable>(path: String, fields: T, updateMask: [String]?) async throws -> Firestore.Document<T> {
         var queryParams = ""
         if let updateMask = updateMask {
             queryParams = updateMask.map({ "updateMask.fieldPaths=\($0)" }).joined(separator: "&")
         }
-
-        return app.client.eventLoop.tryFuture { () -> ByteBuffer in
-            return try JSONEncoder.firestore.encode(["fields": fields]).convertToHTTPBody()
-        }.flatMap { requestBody -> EventLoopFuture<Firestore.Document<T>> in
-            return client.send(
-                method: .PATCH,
-                path: path,
-                query: queryParams,
-                body: requestBody,
-                headers: [:])
-        }
+        
+        let requestBody = try JSONEncoder.firestore.encode(["fields": fields]).convertToHTTPBody()
+        return try await client.send(
+            method: .PATCH,
+            path: path,
+            query: queryParams,
+            body: requestBody,
+            headers: [:])
     }
 
 }

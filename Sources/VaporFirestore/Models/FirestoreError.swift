@@ -1,4 +1,5 @@
 import Foundation
+import Vapor
 
 
 public struct FirestoreErrorResponse: Error, Codable {
@@ -13,6 +14,9 @@ public struct FirestoreErrorResponse: Error, Codable {
 
 public enum FirestoreError: Error {
     case requestFailed
+    case networkError(Error)
+    case invalidResponse(HTTPStatus)
+    case tokenExpired
     case signing
     case parseFailed(data: String)
     case response(error: FirestoreErrorResponse)

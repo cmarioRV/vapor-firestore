@@ -7,7 +7,7 @@
 
 import Foundation
 import Vapor
-import JWT
+import JWTKit
 
 public protocol PropertyWrapperValue {
     associatedtype WrappedValue: Codable
@@ -50,8 +50,8 @@ public enum Firestore
                 self.scope = scope
             }
 
-            public func verify(using signer: JWTSigner) throws {
-                try exp.verifyNotExpired()
+            public func verify(using _: some JWTAlgorithm) throws {
+                try self.exp.verifyNotExpired()
             }
         }
 
