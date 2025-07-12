@@ -141,28 +141,50 @@ public enum Firestore
     }
     
     @propertyWrapper
-    public class GenericValue<T: Codable, Keys: CodingKey>: Codable, PropertyWrapperValue {
-        public var wrappedValue: T
+    public class GenericValue<T: Codable & Sendable, Keys: CodingKey>: Codable, PropertyWrapperValue, @unchecked Sendable {
+        private let lock = NSLock()
+        private var _wrappedValue: T
+        
+        public var wrappedValue: T {
+            get {
+                lock.lock()
+                defer { lock.unlock() }
+                return _wrappedValue
+            }
+            set {
+                lock.lock()
+                defer { lock.unlock() }
+                _wrappedValue = newValue
+            }
+        }
+
         public class var key: Keys { fatalError() }
         
         required public init(wrappedValue: T) {
-            self.wrappedValue = wrappedValue
+            _wrappedValue = wrappedValue
         }
         
         required public init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: Keys.self)
-            self.wrappedValue = try container.decode(T.self, forKey: Self.key)
+            _wrappedValue = try container.decode(T.self, forKey: Self.key)
         }
         
         public func encode(to encoder: Encoder) throws {
+            let value = lock.withLock { _wrappedValue }
             var container = encoder.container(keyedBy: Keys.self)
-            try container.encode(wrappedValue, forKey: Self.key)
+            try container.encode(value, forKey: Self.key)
+        }
+        
+        public func update(_ transform: (inout T) throws -> Void) rethrows {
+            lock.lock()
+            defer { lock.unlock() }
+            try transform(&_wrappedValue)
         }
     }
     
     // MARK: - simple types
     @propertyWrapper
-    public class StringValue: GenericValue<String, ValueCodingKeys>, ExpressibleByStringLiteral {
+    public final class StringValue: GenericValue<String, ValueCodingKeys>, ExpressibleByStringLiteral {
         public override var wrappedValue: String {
             get { super.wrappedValue }
             set { super.wrappedValue = newValue }
@@ -184,7 +206,7 @@ public enum Firestore
     }
     
     @propertyWrapper
-    public class BoolValue: GenericValue<Bool, ValueCodingKeys>, ExpressibleByBooleanLiteral {
+    public final class BoolValue: GenericValue<Bool, ValueCodingKeys>, ExpressibleByBooleanLiteral {
         public override var wrappedValue: Bool {
             get { super.wrappedValue }
             set { super.wrappedValue = newValue }
@@ -206,7 +228,7 @@ public enum Firestore
     }
     
     @propertyWrapper
-    public class TimestampValue: GenericValue<Date, ValueCodingKeys> {
+    public final class TimestampValue: GenericValue<Date, ValueCodingKeys> {
         public override var wrappedValue: Date {
             get { super.wrappedValue }
             set { super.wrappedValue = newValue }
@@ -214,7 +236,7 @@ public enum Firestore
         override public class var key: ValueCodingKeys { .timestampValue }
     }
     
-    public class ReferenceValue: Codable, PropertyWrapperValue {
+    public final class ReferenceValue: Codable, PropertyWrapperValue {
         public typealias WrappedValue = String
         /// In this case wrappedValue is fullDocumentPath
         public var wrappedValue: String { return fullDocumentPath }
@@ -283,8 +305,8 @@ public enum Firestore
     }
     
     @propertyWrapper
-    public struct DoubleValue: Codable, PropertyWrapperValue, ExpressibleByFloatLiteral {
-        public var wrappedValue: Double
+    public struct DoubleValue: Codable, PropertyWrapperValue, ExpressibleByFloatLiteral, Sendable {
+        public let wrappedValue: Double
         
         public init(floatLiteral value: FloatLiteralType) {
             self.init(wrappedValue: value)
@@ -306,7 +328,7 @@ public enum Firestore
     }
     
     @propertyWrapper
-    public struct IntValue: Codable, PropertyWrapperValue, ExpressibleByIntegerLiteral {
+    public struct IntValue: Codable, PropertyWrapperValue, ExpressibleByIntegerLiteral, Sendable {
         private var stringVersion: String
         public var wrappedValue: Int {
             get { return Int(stringVersion) ?? 0 }
@@ -333,7 +355,7 @@ public enum Firestore
     }
     
     // MARK: - Geo Type
-    public struct GeoPoint: Codable, PropertyWrapperValue {
+    public struct GeoPoint: Codable, PropertyWrapperValue, Sendable {
         public var wrappedValue: GeoPoint { self }
         
         public let latitude: Double
@@ -370,7 +392,7 @@ public enum Firestore
     
     // MARK: - complex types
     @propertyWrapper
-    public struct MapValue<T: Codable>: Codable, PropertyWrapperValue {
+    public struct MapValue<T: Codable & Sendable>: Codable, PropertyWrapperValue, Sendable {
         enum NestedCodingKeys: CodingKey {
             case fields
         }
@@ -395,7 +417,7 @@ public enum Firestore
     }
     
     @propertyWrapper
-    public struct ArrayValue<T: Codable>: Codable, PropertyWrapperValue, ExpressibleByArrayLiteral {
+    public struct ArrayValue<T: Codable & Sendable>: Codable, PropertyWrapperValue, ExpressibleByArrayLiteral, Sendable {
         public typealias ArrayLiteralElement = T
         
         enum NestedCodingKeys: CodingKey {
@@ -427,32 +449,49 @@ public enum Firestore
     
     // MARK: - Util Types
     @propertyWrapper
-    public class NullableValue<T: Codable & PropertyWrapperValue>: Codable, ExpressibleByNilLiteral {
-        public var wrappedValue: T.WrappedValue?
+    public final class NullableValue<T: Codable & PropertyWrapperValue & Sendable>: Codable, ExpressibleByNilLiteral, @unchecked Sendable
+    where T.WrappedValue: Sendable {
+        private let lock = NSLock()
+            private var _wrappedValue: T.WrappedValue?
+            
+            public var wrappedValue: T.WrappedValue? {
+                get {
+                    lock.lock()
+                    defer { lock.unlock() }
+                    return _wrappedValue
+                }
+                set {
+                    lock.lock()
+                    defer { lock.unlock() }
+                    _wrappedValue = newValue
+                }
+            }
         
         public required init(nilLiteral: ()) {
-            wrappedValue = nil
+            _wrappedValue = nil
         }
         
         public init(wrappedValue: T.WrappedValue?) {
-            self.wrappedValue = wrappedValue
+            _wrappedValue = wrappedValue
         }
         
         required public init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: Firestore.ValueCodingKeys.self)
             do {
                 _ = try container.decode(T?.self, forKey: .nullValue)
+                _wrappedValue = nil
             } catch {
-                wrappedValue = try T(from: decoder).wrappedValue
+                _wrappedValue = try T(from: decoder).wrappedValue
             }
         }
         
         public func encode(to encoder: Encoder) throws {
-            if let someValue = wrappedValue {
+            let value = lock.withLock { _wrappedValue }
+            if let someValue = value {
                 try T(wrappedValue: someValue).encode(to: encoder)
             } else {
                 var container = encoder.container(keyedBy: Firestore.ValueCodingKeys.self)
-                try container.encode(wrappedValue, forKey: .nullValue)
+                try container.encode(value, forKey: .nullValue)
             }
         }
     }
