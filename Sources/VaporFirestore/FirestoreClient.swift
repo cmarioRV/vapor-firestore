@@ -40,7 +40,7 @@ class FirestoreAPIClient: FirestoreClient {
     private func ensureKeysInitialized() async throws {
         guard !isKeysInitialized else { return }
         
-        let key = try Insecure.RSA.PublicKey(pem: self.privateKey)
+        let key = try Insecure.RSA.PrivateKey(pem: self.privateKey)
         await keys.add(rsa: key, digestAlgorithm: .sha256)
         isKeysInitialized = true
     }
